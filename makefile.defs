@@ -1,0 +1,60 @@
+# Git のパスを確認
+ifeq ($(GIT),)
+GIT := git
+endif
+$(info git path: $(GIT))
+ifeq ($(SHELL), cmd.exe)
+GIT_CHECK := $(shell "$(GIT)" --version > nul 2>&1 && echo 0 || echo 1)
+else
+GIT_CHECK := $(shell "$(GIT)" --version > /dev/null 2>&1 && echo 0 || echo 1)
+endif
+ifeq ($(GIT_CHECK), 1)
+$(error $(SHELL): command not found: $(GIT))
+endif
+
+COMMIT := $(shell $(GIT) log -n 1 --format="%h")
+
+# 既存のファイルの変更のみ反映する場合
+# --untracked-files=no
+changes := $(shell $(GIT) status -uno -sz)
+# 新規ファイルの追加も反映する場合
+# --untracked-files=all
+# changes := $(shell git status -sz)
+ifneq ($(strip $(changes)),)
+DIRTY := +
+endif
+
+# git tag名前を取得する
+#  git describe --tag とすると以下のように表示される
+#  v20200306-2-g904cd34
+#  [Tag]-[現在のコミットからいくつ目にTagが打たれているか]-g[Tagが打たれたときのコミットハッシュ]
+#   これを、要素別に分解して使用する
+#  [Tag] [現在のコミットからいくつ目にTagが打たれているか] [Tagが打たれたときのコミットハッシュ]
+git_tag := $(shell $(GIT) describe --tags) 
+git_tag := $(subst -, ,$(git_tag))
+
+git_tag_last := $(word 1, $(git_tag))
+git_tag_prevhash := $(lastword $(git_tag))
+git_tag_prevhash := $(subst g,,$(git_tag_prevhash))
+git_tag_wordnum := $(words $(git_tag))
+
+ifeq ($(git_tag_wordnum),1)
+  COMMIT_TAG := $(git_tag_last)
+else
+  ifeq ($(git_tag_wordnum),2)
+    COMMIT_TAG := $(git_tag_last)
+  else
+    COMMIT_TAG := $(git_tag_last)+
+  endif
+endif
+
+ifneq ($(git_tag_wordnum),1)
+  ifneq ($(git_tag_wordnum),3)
+    COMMIT_TAG := $(COMMIT_TAG) [C]
+  endif
+endif
+
+UN_REV := $(COMMIT_TAG) $(COMMIT)$(DIRTY)
+$(info UN_REVISION: $(UN_REV))
+
+GEN_OPTS__FLAG += -DUN_REVISION="\"$(UN_REV)\""
