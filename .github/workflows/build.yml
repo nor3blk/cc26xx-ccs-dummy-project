@@ -1,0 +1,50 @@
+name: CCS Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  HOST: docker.pkg.github.com
+  IMAGE: docker.pkg.github.com/nor3blk/ccs930-cc26xx-docker/ccs930-cc26xx-docker:latest
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+#      - name: Fetch 
+#        run: git fetch --prune --tags --unshallow
+#      - run: git status
+
+      - name: Login to GitHub Packages
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ${HOST} -u ${{ github.actor }} --password-stdin
+      - name: Pull image from GitHub Packages
+        run: |
+          echo "${IMAGE}"
+          docker pull "${IMAGE}"
+
+      - name: Test docker run
+        run: |
+          docker run -v $(pwd):/github/workspace ${IMAGE} \
+            -c "ls -l /github/workspace"
+
+      - name: Build with docker
+        run: |
+          docker run -v $(pwd):/github/workspace ${IMAGE} \
+            -c "eclipse -noSplash -data /github -application com.ti.ccstudio.apps.projectBuild -ccs.autoImport -ccs.projects workspace -ccs.configuration Debug"
+
+#      - run: git status
+
+      - name: Copy artifact
+        run: mkdir -p artifact && cp -p Debug/workspace.out artifact/$(basename ${{ github.repository }}).out
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: artifact_${{ github.sha }}
+          path: artifact
