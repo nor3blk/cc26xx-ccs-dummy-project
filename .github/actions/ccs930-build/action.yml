@@ -1,13 +1,15 @@
 name: 'Build CCS 930 project'
 description: 'Build CCS 930 project'
-intpus:
-  configurations:
+inputs:
+  build_configs:
     description: 'Comma-separated CCS project configurations list'
     required: true
-    default: 'Debug'
 runs:
-  using: 'docker'
-  image: 'docker://ghcr.io/nor3blk/ccs930-cc26xx-docker:latest'
-  args:
-    - ${{ inputs.configurations }}
-  entrypoint: 'entrypoint.sh'
+  using: 'composite'
+  steps:
+    - run: docker pull docker.pkg.github.com/nor3blk/ccs930-cc26xx-docker/ccs930-cc26xx-docker:latest
+      shell: bash
+    - run: chmod +x ${{ github.action_path }}/entrypoint.sh
+      shell: bash
+    - run: docker run -v ${{ github.action_path }}:/tmp/action  -v ${{ github.workspace }}:/github/workspace --entrypoint /tmp/action/entrypoint.sh docker.pkg.github.com/nor3blk/ccs930-cc26xx-docker/ccs930-cc26xx-docker:latest ${{ inputs.build_configs }}
+      shell: bash
