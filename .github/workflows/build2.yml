@@ -17,6 +17,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: SSH Setting
+        env:
+          TOKEN: ${{ secrets.PRIVATE_MODULE_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh/
+          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+          echo -e "$TOKEN" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ls -lA ~/.ssh/
+      - name: Checkout submodule
+        shell: bash
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --force --recursive
 
       - name: Login to GitHub Packages
         uses: docker/login-action@v1
