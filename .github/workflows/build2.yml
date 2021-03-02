@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: SSH Setting
         env:
-          TOKEN: ${{ secrets.PRIVATE_MODULE_DEPLOY_KEY }}
+          TOKEN: ${{ secrets.DEPLOY_KEY }}
         run: |
           mkdir -p ~/.ssh/
           ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
