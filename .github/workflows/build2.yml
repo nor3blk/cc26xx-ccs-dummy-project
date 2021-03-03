@@ -46,3 +46,8 @@ jobs:
         uses: ./.github/actions/ccs930-build
         with:
           build_configs: 'Debug,Release'
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: artifact_${{ github.sha }}
+          path: artifact
